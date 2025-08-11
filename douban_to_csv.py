@@ -10,6 +10,19 @@ USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/537.36
 START_DATE = '20050502'
 IS_OVER = False
 
+# Replace with your Douban cookies
+DOUBAN_COOKIES = {
+    "bid": "your_bid_here",
+    "dbcl2": "your_dbcl2_here",
+    "ck": "your_ck_here",
+    # Add more cookies as needed
+}
+
+session = requests.Session()
+session.headers.update({
+    'User-Agent': USER_AGENT
+})
+session.cookies.update(DOUBAN_COOKIES)
 
 def get_rating(rating_class):
     """
@@ -22,7 +35,7 @@ def get_rating(rating_class):
 
 
 def get_imdb_id(url):
-    r = requests.get(url, headers={'User-Agent': USER_AGENT})
+    r = session.get(url, headers={'User-Agent': USER_AGENT})
     soup = BeautifulSoup(r.text, 'lxml')
     info_area = soup.find(id='info')
     imdb_id = None
@@ -34,7 +47,7 @@ def get_imdb_id(url):
                 if imdb_id.startswith('tt'):
                     break
         else:
-            print('不登录无法访问此电影页面：', url)
+            print('请手动添加', url)
     except:
         print('无法获得IMDB编号的电影页面：', url)
     finally:
@@ -43,7 +56,7 @@ def get_imdb_id(url):
 
 def get_info(url):
     info = []
-    r = requests.get(url, headers={'User-Agent': USER_AGENT})
+    r = session.get(url, headers={'User-Agent': USER_AGENT})
     soup = BeautifulSoup(r.text, "lxml")
     movie_items = soup.find_all("div", {"class": "item"})
     if len(movie_items) > 0:
@@ -76,14 +89,14 @@ def get_info(url):
 
             info.append([title, rating, imdb])
     else:
-        return None
+        return []
 
     return info
 
 
 def get_max_index(user_id):
     url = f"https://movie.douban.com/people/{user_id}/collect"
-    r = requests.get(url, headers={'User-Agent': USER_AGENT})
+    r = session.get(url, headers={'User-Agent': USER_AGENT})
     soup = BeautifulSoup(r.text, "lxml")
 
     paginator = soup.find("div", {"class": "paginator"})
@@ -121,7 +134,7 @@ def export(user_id):
 
 
 def check_user_exist(user_id):
-    r = requests.get(f'https://movie.douban.com/people/{user_id}/', headers={'User-Agent': USER_AGENT})
+    r = session.get(f'https://movie.douban.com/people/{user_id}/', headers={'User-Agent': USER_AGENT})
     soup = BeautifulSoup(r.text, 'lxml')
     if '页面不存在' in soup.title:
         return False
@@ -142,3 +155,4 @@ if __name__ == '__main__':
         START_DATE = sys.argv[2]
     print(f'开始抓取{START_DATE + "之后的" if START_DATE != "20050502" else "所有"}观影数据...')
     export(sys.argv[1])
+
